@@ -1,22 +1,22 @@
 # Portfolio Exercise 2: Benchmarking Code Generation
 
-Two chatbots, **DeepSeek** and **Gemini**, were each used to implement **10 sorting algorithms** in Python and compared head-to-head on identical inputs:
+We asked **DeepSeek** and **Gemini** to write **10 sorting algorithms** in Python. Then we tested both on the exact same data:
 
-1. **50,000 random strings** (5–25 alphanumeric characters, seed `42`) for the 4 string-specific algorithms,
-2. **50,000 random integers** (`0` to `1,000,000`, seed `42`) for the 5 general $O(n \log n)$ / sub-quadratic comparison sorts, and **10,000 integers** for the quadratic `Cocktail Sort`,
-3. `compare_sorting.py` verifies that every algorithm from both chatbots matches Python's `sorted()`, times each with `time.perf_counter()`, and generates a side-by-side comparison chart.
+1. **50,000 random strings** (5–25 characters) for the 4 string sorts.
+2. **50,000 random integers** (`0` to `1,000,000`) for 5 general sorts, and **10,000 integers** for the slow `Cocktail Sort`.
+3. `compare_sorting.py` checks that every output matches `sorted()`, times each run, and saves a bar chart.
 
-The bonus track in [`../comparison`](../comparison) repeats this benchmark with **10 string compression algorithms** (speed and compression ratio).
+The bonus track in [`../comparison`](../comparison) does the same test with **10 string compression algorithms**.
 
 ## Files
 
 | File | What it is |
 | :--- | :--- |
-| [`deepseek.py`](deepseek.py) | DeepSeek's implementations of the 10 sorting algorithms (`get_algorithms()`) |
-| [`gemini.py`](gemini.py) | Gemini's implementations of the same 10 sorting algorithms (`get_algorithms()`) |
-| [`compare_sorting.py`](compare_sorting.py) | Benchmark runner: generates test data, validates outputs, times all 10 pairs, and saves `comparison_chart_<timestamp>.png` |
-| [`comparison_chart_2026-11-16_00-51-13.png`](comparison_chart_2026-11-16_00-51-13.png) | Latest benchmark chart comparing DeepSeek and Gemini across all 10 algorithms |
-| [`../comparison`](../comparison) | Bonus track: `deepseek_compression.py`, `gemini_compression.py`, their result files, and `compression_benchmark_results.png` |
+| [`deepseek.py`](deepseek.py) | DeepSeek's 10 sorting functions (`get_algorithms()`) |
+| [`gemini.py`](gemini.py) | Gemini's 10 sorting functions (`get_algorithms()`) |
+| [`compare_sorting.py`](compare_sorting.py) | Generates test data, checks results, times all 10 pairs, and saves the chart |
+| [`comparison_chart_2026-11-16_00-51-13.png`](comparison_chart_2026-11-16_00-51-13.png) | Bar chart of the sorting times |
+| [`../comparison`](../comparison) | Bonus track: compression scripts, results, and chart |
 
 ## How to run
 
@@ -26,11 +26,11 @@ python ../comparison/deepseek_compression.py
 python ../comparison/gemini_compression.py
 ```
 
-Requires `matplotlib` (and `pandas` for the compression scripts; see the repo's `../../../../requirements.txt`).
+Needs `matplotlib` (and `pandas` for the compression scripts; see `../../../../requirements.txt`).
 
 ## Results: sorting (50,000 items, seed 42)
 
-Every algorithm in both modules returned the exact same sorted list as `sorted()`.
+All 10 algorithms in both files returned the right sorted order.
 
 | Algorithm | Input | DeepSeek (s) | Gemini (s) | Faster |
 | :--- | :--- | --: | --: | :--- |
@@ -49,21 +49,21 @@ Every algorithm in both modules returned the exact same sorted list as `sorted()
 
 ## Reflection: code quality of the two chatbots
 
-**String-specific algorithms (Radix & Bucket sorts).**
-- **MSD and LSD Radix Sort:** DeepSeek writes textbook index-based counting sort (`count` array of size 258 and `aux` buffer), while Gemini groups strings into 257 Python lists (`buckets[code].append(s)`). In MSD Radix Sort, DeepSeek loops over all 256 character values at every recursive step even when almost all buckets are empty, whereas Gemini only recurses on non-empty buckets (`if buckets[b]:`), making Gemini **2.77x faster** on MSD (`0.0566s` vs `0.1569s`) and **2.43x faster** on LSD (`0.0405s` vs `0.0985s`).
-- **3-Way Radix Quicksort:** DeepSeek implements Bentley–Sedgewick's in-place 3-way index swaps (`lo`, `lt`, `gt`, `hi`), while Gemini partitions into three new Python lists (`less`, `equal`, `greater`) per recursive call. In CPython, bulk list appends beat repeated element-by-element index swaps, giving Gemini a **1.51x** edge (`0.0451s` vs `0.0680s`).
-- **Prefix Bucket Sort:** DeepSeek supports both numeric and string inputs (`isinstance(x, (int, float))`), buckets strings by their 1-character prefix (`s[0]`), and sorts each bucket with Python's built-in C `sorted()`. Gemini buckets only strings by 2-character prefix (`s[:2]`) and sorts each bucket with its own pure-Python `quick_sort()`. Delegating bucket sorting to Timsort makes DeepSeek **3.75x faster** (`0.0056s` vs `0.0210s`), though Gemini's 2-character bucketing + custom sort is more faithful to a self-contained algorithm implementation.
+**String sorts (Radix and Bucket).**
+- **MSD and LSD Radix Sort:** DeepSeek uses a `count` list and a helper array. Gemini puts strings into 257 Python lists (`buckets`). In MSD Radix Sort, DeepSeek loops over all 256 buckets at every step, even when most are empty. Gemini skips empty buckets (`if buckets[b]:`). This makes Gemini **2.77x faster** on MSD and **2.43x faster** on LSD.
+- **3-Way Radix Quicksort:** DeepSeek swaps items in place using indexes. Gemini builds three new lists (`less`, `equal`, `greater`) on each call. In Python, `list.append` in C is faster than many index swaps in Python, so Gemini wins by **1.51x**.
+- **Prefix Bucket Sort:** DeepSeek supports both numbers and strings. For strings, it groups by the first letter (`s[0]`) and sorts each bucket with Python's built-in `sorted()`. Gemini groups by the first two letters (`s[:2]`) and sorts each bucket with its own `quick_sort()`. Because `sorted()` runs in C, DeepSeek is **3.75x faster**, though Gemini relies less on built-in sort.
 
-**General comparison algorithms.**
-- **Quick Sort (3-Way):** Both partition into three lists (`less`, `equal`, `greater`), but DeepSeek partitions in a single `for` loop (`if / elif / else`), whereas Gemini runs three separate list comprehensions over `arr` per call. Single-pass partitioning makes DeepSeek **1.42x faster** (`0.0302s` vs `0.0429s`).
-- **Comb Sort:** Nearly identical, except DeepSeek caches `n = len(a)` before the loop while Gemini calls `len(a)` on every iteration of the inner `while` loop (`0.0879s` vs `0.0987s`, **1.12x** faster for DeepSeek).
-- **Heap, Merge, Shell, and Cocktail Sort:** Both chatbots produced virtually identical implementations (iterative `sift_down` heap sort, Knuth `3*g + 1` shell sort, recursive merge sort, and bidirectional cocktail shaker sort) with very close runtimes.
+**General sorts.**
+- **Quick Sort (3-Way):** Both split the input into `less`, `equal`, and `greater` lists. DeepSeek does this in one `for` loop. Gemini uses three list comprehensions, so it loops over the array three times per call. DeepSeek is **1.42x faster**.
+- **Comb Sort:** Both versions are almost the same. DeepSeek saves `n = len(a)` once, while Gemini calls `len(a)` inside the `while` loop on every step. DeepSeek is **1.12x faster**.
+- **Heap, Merge, Shell, and Cocktail Sort:** Both chatbots wrote almost the same code for these four, and their speeds are nearly equal.
 
-**Overall.** When constrained to the exact same 10 algorithms, Gemini's idiomatic Python list-bucketing wins on the radix sorts, while DeepSeek writes tighter loops (single-pass 3-way quicksort, cached length in comb sort, and type-aware bucket sort).
+**Overall.** Gemini's list-based buckets work better in Python for radix sorts. DeepSeek writes tighter loops for quicksort and comb sort, and handles both numbers and strings in bucket sort.
 
 ## Bonus: compression (100,000 strings, 1.56 MB)
 
-Both chatbots picked the same 10 algorithms: five from the standard library (zlib level 6 and level 1, gzip, bz2, lzma) and five written in pure Python (Huffman, LZW, LZ77, byte-pair encoding, RLE). Every algorithm decompressed back to the original bytes. Numbers below are from `deepseek_compression.py`; Gemini's script produces the same sizes and near-identical times.
+Both chatbots picked the same 10 algorithms: five from the standard library (`zlib` level 1 and 6, `gzip`, `bz2`, `lzma`) and five in pure Python (Huffman, LZW, LZ77, byte-pair encoding, RLE). Every algorithm restored the exact original bytes.
 
 | Algorithm | Compress (s) | Decompress (s) | Compressed size (% of original) |
 | :--- | --: | --: | --: |
@@ -80,6 +80,6 @@ Both chatbots picked the same 10 algorithms: five from the standard library (zli
 
 ![Compression benchmark](../comparison/compression_benchmark_results.png)
 
-Random alphanumeric text has almost no repetition, so the only gain available is packing a 62-symbol alphabet into about 6 bits instead of 8, which is why everything with an entropy coder lands near 75%. RLE, LZ77 and BPE make the data bigger because their counts, pointers and 16-bit tokens cost more than the repeats they find.
+Random text has almost no repeated patterns. The best a compressor can do is pack 62 characters into about 6 bits instead of 8 bits (around 75% of the original size). RLE, LZ77, and BPE actually make the data bigger because their extra pointers and counts take more space than they save.
 
-**Reflection.** Here the two solutions are nearly the same code: same algorithms, same pure-Python implementations almost line for line. They differ only in the reporting, where Gemini uses a `pandas` table and a chart and DeepSeek prints a plain-text table with throughput in MB/s. Both originally ran the pure-Python algorithms on a 10,000-string sample, which made the ratios not comparable across algorithms; both now run everything on the full dataset.
+**Reflection.** Here the two scripts are almost identical. They only differ in output format: Gemini uses `pandas` and saves a chart, while DeepSeek prints a plain-text table with speed in MB/s.
