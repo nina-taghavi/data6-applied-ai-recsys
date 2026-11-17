@@ -9,15 +9,27 @@ env/
 
 # macOS
 .DS_Store
+**/.DS_Store
 
-# Python
+# Python cache
 __pycache__/
+**/__pycache__/
 *.py[cod]
 
 # Jupyter
 .ipynb_checkpoints/
+**/.ipynb_checkpoints/
 
-# Secrets
+# Secrets & Environment Variables
 .env
 .env.*
 !.env.example
+
+# RL Logs, Checkpoints & Large Starter Packages
+ReinforcementLearning/week1/reinforcement
+RecommenderSystem/portfolio_exercises/data
+tb_logs/
+**/tb_logs/
+flappy_tb/
+**/checkpoints/
+*.zip
