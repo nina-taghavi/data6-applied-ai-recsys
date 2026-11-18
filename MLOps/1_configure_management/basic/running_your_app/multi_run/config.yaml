@@ -1,0 +1,9 @@
+defaults:
+  - db: mysql
+  - schema: warehouse
+  - _self_
+
+app:
+  name: "multi_run_demo"
+  version: "1.0"
+  env: "production"

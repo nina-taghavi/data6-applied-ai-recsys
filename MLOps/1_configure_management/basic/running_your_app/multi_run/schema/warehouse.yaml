@@ -1,0 +1,6 @@
+name: warehouse
+tables:
+  - orders
+  - inventory
+  - customers
+retention_days: 365

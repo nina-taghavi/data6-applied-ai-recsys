@@ -1,0 +1,8 @@
+defaults:
+  - db: mysql
+  - model: resnet
+  - _self_
+
+experiment_name: "notebook_exploration"
+seed: 42
+debug: false

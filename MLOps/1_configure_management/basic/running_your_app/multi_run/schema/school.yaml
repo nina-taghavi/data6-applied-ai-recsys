@@ -1,0 +1,6 @@
+name: school
+tables:
+  - students
+  - courses
+  - grades
+retention_days: 1825

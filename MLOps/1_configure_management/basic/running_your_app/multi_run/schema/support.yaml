@@ -1,0 +1,6 @@
+name: support
+tables:
+  - tickets
+  - agents
+  - feedback
+retention_days: 90

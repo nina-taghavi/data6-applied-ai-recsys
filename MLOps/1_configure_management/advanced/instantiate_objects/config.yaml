@@ -1,0 +1,21 @@
+defaults:
+  - db: mysql
+  - _self_
+
+pipeline:
+  _target_: components.Pipeline
+  name: "data_ingestion"
+  batch_size: 64
+  client:
+    _target_: components.Client
+    endpoint: "https://api.internal.data/v1"
+    retry_count: 5
+
+trainer_factory:
+  _target_: components.ModelTrainer
+  _partial_: true
+  model_name: "ResNet50"
+  learning_rate: 0.001
+
+eval_metric:
+  _target_: components.calculate_accuracy

@@ -1,0 +1,6 @@
+[core]
+    site_cache_dir = /Users/nooshin/Uni/Data/data6/data6/MLOps/.cache/dvc/site
+    analytics = false
+    remote = myremote
+['remote "myremote"']
+    url = /Users/nooshin/Uni/Data/data6/data6/MLOps/.dvc_remote

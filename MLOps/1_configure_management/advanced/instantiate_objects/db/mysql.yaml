@@ -1,0 +1,5 @@
+_target_: components.MySQLConnection
+host: localhost
+port: 3306
+user: root
+timeout: 10

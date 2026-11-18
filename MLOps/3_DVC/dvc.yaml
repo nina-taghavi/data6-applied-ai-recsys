@@ -1,0 +1,33 @@
+stages:
+  prepare:
+    cmd: python src/prepare.py
+    deps:
+      - data/data.xml
+      - src/prepare.py
+    params:
+      - prepare.seed
+      - prepare.split
+    outs:
+      - data/prepared
+
+  train:
+    cmd: python src/train.py
+    deps:
+      - data/prepared
+      - src/train.py
+    params:
+      - train.max_features
+      - train.seed
+      - train.solver
+    outs:
+      - models/model.pkl
+
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+      - data/prepared
+      - models/model.pkl
+      - src/evaluate.py
+    metrics:
+      - metrics.json:
+          cache: false
